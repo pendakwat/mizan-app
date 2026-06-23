@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Amalan Harian</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="header">Amalan Harian</div>
+
+    <div class="container">
+        
+        <!-- ========================================== -->
+        <!-- 📝 TAB 1: AMALAN (CHECKLIST)               -->
+        <!-- ========================================== -->
+        <div id="tab-amalan" class="tab-content active">
+            
+            <!-- Bahagian Atas: Kalendar Mingguan & Progress -->
+            <div class="dashboard-header">
+                <div class="progress-ring-container" id="progressRing" style="--pct: 0;">
+                    <div class="progress-ring-inner" id="progressText">0%</div>
+                </div>
+                <div class="dashboard-info">
+                    <h2 id="hariIniTeks" style="margin: 0; font-size: 1.5em; color: var(--text-main);">Memuatkan...</h2>
+                    <div id="tarikhTeks" style="font-size: 0.85em; color: var(--text-muted);">Menyegerak masa...</div>
+                </div>
+            </div>
+
+            <!-- Kalendar Strip -->
+            <div class="calendar-strip" id="calendarStrip">
+                <!-- Kalendar akan dijana oleh JavaScript -->
+            </div>
+
+            <!-- Bekas Utama Senarai Amalan -->
+            <div id="amalanList">
+                <div style="text-align:center; color:#3b82f6; padding: 20px;">Menyegerak data amalan... ⏳</div>
+            </div>
+            
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 📅 TAB 2: KALENDAR HIJRAH                  -->
+        <!-- ========================================== -->
+        <div id="tab-kalendar" class="tab-content">
+            <div class="card">
+                <div class="hijri-date-big" id="hijriDateDisplay">Memuatkan...</div>
+                <div class="masihi-date" id="masihiDateDisplay"></div>
+                <div class="card-header" style="margin-top: 20px;"><span class="card-title">Taqwim & Waktu Ibadah</span></div>
+                <ul class="event-list" id="islamicEvents">
+                    <li style="text-align:center; color:#6b7280; font-size:0.9em;">Menganalisis kalendar...</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 🕌 TAB 3: WAKTU SOLAT & KIBLAT             -->
+        <!-- ========================================== -->
+        <div id="tab-solat" class="tab-content">
+            <div class="iman-card">
+                <div class="iman-card-header">
+                    <span class="iman-icon">🧭</span> <span style="font-weight: 600;">Qibla</span>
+                </div>
+                <div class="qibla-content">
+                    <div class="qibla-compass-wrapper">
+                        <div class="qibla-compass" id="compassIcon">➤</div>
+                    </div>
+                    <div class="qibla-info">
+                        <div>Qibla angle: <span id="qiblaDegreeText" style="color:white;">--°</span></div>
+                        <div style="font-size: 0.85em; color: #8e8e93; margin-top: 4px;" id="qiblaLocationTxt">Menetapkan lokasi...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="iman-card">
+                <div class="iman-card-header" style="justify-content: space-between;">
+                    <span style="color: #e5e5ea;">JAKIM, Malaysia</span>
+                    <span id="solatTodayStr" style="color: #e5e5ea;">Today</span>
+                </div>
+                <div class="iman-hijri-date" id="solatHijriStr">Memuatkan tarikh...</div>
+                <div class="iman-times-list" id="solatList2"></div>
+                <div class="iman-location-footer" id="solatLocationFooter">📍 Memuatkan lokasi...</div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 📖 TAB 4: PANDUAN AMALAN                   -->
+        <!-- ========================================== -->
+        <div id="tab-panduan" class="tab-content">
+            <div class="card" style="background: transparent; box-shadow: none; padding:0;">
+                <div class="guide-item" id="guide-tahajjud">
+                    <div class="guide-header" onclick="toggleGuide('tahajjud')">Qiyamullail & Tahajjud <span>▼</span></div>
+                    <div class="guide-body"><strong>Cara Pelaksanaan:</strong><br>Dilakukan selepas bangun dari tidur (sebaiknya 1/3 malam terakhir). <br>- Niat: <i>Sahaja aku solat sunat Tahajjud dua rakaat kerana Allah Taala.</i></div>
+                </div>
+                <div class="guide-item" id="guide-dhuha">
+                    <div class="guide-header" onclick="toggleGuide('dhuha')">Solat Sunat Dhuha <span>▼</span></div>
+                    <div class="guide-body"><strong>Waktu:</strong> 20 minit selepas Syuruq sehingga 15 minit sebelum masuk Zohor.</div>
+                </div>
+                <div class="guide-item" id="guide-zikir">
+                    <div class="guide-header" onclick="toggleGuide('zikir')">Zikir Pagi & Petang <span>▼</span></div>
+                    <div class="guide-body">Disyorkan membaca Al-Mathurat. Antara zikir utama: Ayat Kursi, 3 Qul, dan Sayyidul Istighfar.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- ⚙️ TAB 5: TETAPAN                          -->
+        <!-- ========================================== -->
+        <div id="tab-setting" class="tab-content">
+            <div class="card">
+                <div class="card-header"><span class="card-title">Lokasi</span></div>
+                <div class="form-group"><label>Bandar</label><input type="text" id="cityInput"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span class="card-title">Tetapan Waktu (Minit)</span></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Qiyam (sebelum Subuh)</label><input type="number" id="offQiyam"></div>
+                    <div class="form-group"><label>Dhuha (lepas Syuruq)</label><input type="number" id="offDhuha"></div>
+                </div>
+                <div class="form-group"><label>Tidur (lepas Isyak)</label><input type="number" id="offTidur"></div>
+                <button class="btn btn-primary" onclick="saveSettings()">Simpan Tetapan</button>
+            </div>
+            <div class="card">
+                <div class="card-header"><span class="card-title">Tindakan</span></div>
+                <button class="btn btn-danger" onclick="resetChecklist()">Reset Tanda Amalan</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BAR NAVIGASI BAWAH -->
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('amalan')" id="nav-amalan"><span class="nav-icon">📝</span><span>Amalan</span></button>
+        <button class="nav-item" onclick="switchTab('kalendar')" id="nav-kalendar"><span class="nav-icon">📅</span><span>Kalendar</span></button>
+        <button class="nav-item" onclick="switchTab('solat')" id="nav-solat"><span class="nav-icon">🕌</span><span>Solat</span></button>
+        <button class="nav-item" onclick="switchTab('panduan')" id="nav-panduan"><span class="nav-icon">📖</span><span>Panduan</span></button>
+        <button class="nav-item" onclick="switchTab('setting')" id="nav-setting"><span class="nav-icon">⚙️</span><span>Tetapan</span></button>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
