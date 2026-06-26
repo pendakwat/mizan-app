@@ -145,6 +145,3 @@ Adab Ziarah Kubur:
 4. Mengambil iktibar dan merenung tentang kematian.` 
     }
 ];
-
-// Pembolehubah untuk menyimpan status (state) pengguna
-let appData = [];
