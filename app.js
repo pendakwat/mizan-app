@@ -1,76 +1,177 @@
-// --- 1. STATE & TETAPAN ---
-let userSettings = JSON.parse(localStorage.getItem('appSettings')) || { city: 'Bangi', offQiyam: 60, offDhuha: 30, offTidur: 120 };
+// ==========================================
+// PANGKALAN DATA & STRUKTUR
+// ==========================================
+let userSettings = JSON.parse(localStorage.getItem('mizanSettings')) || { city: 'Bangi', offSolat: 0 };
 document.getElementById('cityInput').value = userSettings.city;
-document.getElementById('offQiyam').value = userSettings.offQiyam;
-document.getElementById('offDhuha').value = userSettings.offDhuha;
-document.getElementById('offTidur').value = userSettings.offTidur;
+document.getElementById('offSolat').value = userSettings.offSolat;
 
-// Variable global untuk semakan kalendar Islamik
-let globalDayOfWeek = new Date().getDay(); // 0(Sun) to 6(Sat)
-let globalHijriMonth = 0;
-let globalHijriDay = 0;
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
 
-// --- 2. FUNGSI TAB & PANDUAN ---
-function switchTab(tabName) {
+// Data Asas Mizan (Dibahagikan ikut Ring)
+const senaraiMizan = [
+    { 
+        id: 'fardu', title: 'Solat-solat Fardu', ring: 'ringFardu', max: 5,
+        tasks: [
+            { id: 'f1', name: 'Solat Subuh', desc: 'Sempurnakan dalam waktu' },
+            { id: 'f2', name: 'Solat Zohor', desc: 'Sempurnakan dalam waktu' },
+            { id: 'f3', name: 'Solat Asar', desc: 'Sempurnakan dalam waktu' },
+            { id: 'f4', name: 'Solat Maghrib', desc: 'Sempurnakan dalam waktu' },
+            { id: 'f5', name: 'Solat Isyak', desc: 'Sempurnakan dalam waktu' }
+        ]
+    },
+    { 
+        id: 'sunat', title: 'Solat-solat Sunat', ring: 'ringSunat', max: 15,
+        tasks: [
+            { id: 's1', name: 'Solat Berjemaah', desc: 'Paling kurang 2 waktu' },
+            { id: 's2', name: 'Solat di Masjid', desc: 'Paling kurang 2 waktu' },
+            { id: 's3', name: 'Sunat Subuh', desc: '2 Rakaat Qabliyah' },
+            { id: 's4', name: 'Sunat Dhuha', desc: '2/4/6/8 Rakaat' },
+            { id: 's5', name: 'Zohor Qabliyah', desc: '2/4 Rakaat sebelum Zohor' },
+            { id: 's6', name: 'Zohor Badiyah', desc: '2/4 Rakaat selepas Zohor' },
+            { id: 's7', name: 'Asar Qabliyah', desc: '2/4 Rakaat sebelum Asar' },
+            { id: 's8', name: 'Maghrib Qabliyah', desc: '2 Rakaat sebelum Maghrib' },
+            { id: 's9', name: 'Maghrib Badiyah', desc: '2 Rakaat selepas Maghrib' },
+            { id: 's10', name: 'Isyak Qabliyah', desc: '2/4 Rakaat sebelum Isyak' },
+            { id: 's11', name: 'Isyak Badiyah', desc: '2/4 Rakaat selepas Isyak' },
+            { id: 's12', name: 'Sunat Tahajjud', desc: '2/4/6/8 Rakaat' },
+            { id: 's13', name: 'Sunat Witir', desc: 'Ganjil penutup solat' },
+            { id: 's14', name: 'Sunat Tawbat', desc: 'Memohon keampunan' },
+            { id: 's15', name: 'Sunat Wuduk', desc: 'Selepas mengambil wuduk' }
+        ]
+    },
+    { 
+        id: 'zikirQuran', title: 'Zikir, Wirid & Al-Quran', ring: 'ringZikir', max: 9,
+        tasks: [
+            { id: 'z1', name: 'Tilawah Al-Quran (Set 1)', desc: 'Sekurang-kurangnya 1 muka surat' },
+            { id: 'z2', name: 'Tilawah Khatam (Set 2)', desc: 'Mengikut jadual 30 hari' },
+            { id: 'z3', name: 'Wirid Selepas Subuh', desc: 'Zikir rutin selepas solat' },
+            { id: 'z4', name: 'Wirid Selepas Zohor', desc: 'Zikir rutin selepas solat' },
+            { id: 'z5', name: 'Wirid Selepas Asar', desc: 'Zikir rutin selepas solat' },
+            { id: 'z6', name: 'Wirid Selepas Maghrib', desc: 'Zikir rutin selepas solat' },
+            { id: 'z7', name: 'Wirid Selepas Isyak', desc: 'Zikir rutin selepas solat' },
+            { id: 'z8', name: 'Zikir Pagi', desc: 'Dari Subuh ke Syuruq' },
+            { id: 'z9', name: 'Zikir Petang & Tidur', desc: 'Dari Asar dan sebelum lelap' }
+        ]
+    },
+    { 
+        id: 'bonus', title: 'Amalan Bonus (Pilihan)', ring: 'ringBonus', max: 0,
+        tasks: [
+            { id: 'b1', name: 'Sedekah Harian', desc: 'Walaupun sekecil nilainya' },
+            { id: 'b2', name: 'Puasa Sunat', desc: 'Isnin/Khamis atau Ayyamul Bidh' }
+        ]
+    }
+];
+
+const zikirData = [
+    { title: 'Zikir Selepas Solat Fardu', content: '1. Istighfar (Astaghfirullah) 3x\n\n2. Allahumma antassalam, wa minkassalam, tabarakta ya dzaal jalali wal ikram.\n\n3. Ayat Kursi (Allahu la ilaha illa Huwa...)\n\n4. Subhanallah (33x)\n5. Alhamdulillah (33x)\n6. Allahu Akbar (33x)\n\n7. Lailaha illallah wahdahu la syarikalah... (1x)' },
+    { title: 'Zikir Pagi & Petang', content: 'Dibaca pada waktu pagi dan petang (Al-Mathurat):\n\n1. Membaca Al-Fatihah\n2. Membaca Ayat Kursi\n3. Membaca 3 Qul (Al-Ikhlas, Al-Falaq, An-Nas) sebanyak 3 kali.\n4. Sayyidul Istighfar (Penghulu Istighfar)\n5. "Bismillahilladzi la yadhurru ma\'asmihi syai\'un fil ardhi wa la fis sama\'i wa huwas sami\'ul \'alim" (3x)' },
+    { title: 'Adab Ziarah Kubur', content: '1. Mengucapkan salam kepada ahli kubur:\n"Assalamu\'alaikum ahladdiyari minal mu\'minina wal muslimin..."\n\n2. Mendoakan keampunan untuk jenazah.\n3. Tidak duduk atau memijak di atas kuburan.\n4. Merenung kematian sebagai pengajaran.' }
+];
+
+let appData = [];
+
+// ==========================================
+// INISIALISASI & LOCAL STORAGE
+// ==========================================
+function loadData() {
+    const saved = JSON.parse(localStorage.getItem('mizanState'));
+    if (saved) {
+        appData = saved;
+    } else {
+        // Clone struktur asas
+        appData = JSON.parse(JSON.stringify(senaraiMizan));
+    }
+    renderAmalan();
+}
+
+function saveData() {
+    localStorage.setItem('mizanState', JSON.stringify(appData));
+    updateRings();
+}
+
+// ==========================================
+// FUNGSI TAB & UI
+// ==========================================
+function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById(`tab-${tabName}`).classList.add('active');
-    document.getElementById(`nav-${tabName}`).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    document.getElementById(`nav-${tab}`).classList.add('active');
     window.scrollTo(0,0);
 }
 
-function toggleGuide(guideId) {
-    document.querySelector(`#guide-${guideId} .guide-body`).classList.toggle('active');
+// ==========================================
+// RENDER AMALAN & 4 RINGS
+// ==========================================
+function updateRings() {
+    appData.forEach(kat => {
+        let maxTasks = kat.max;
+        let completed = kat.tasks.filter(t => t.completed).length;
+        
+        // Khas untuk kategori Bonus (tiada had maksimum)
+        if (kat.id === 'bonus') {
+            maxTasks = kat.tasks.length;
+        }
+
+        let pct = maxTasks === 0 ? 0 : Math.min(100, Math.round((completed / maxTasks) * 100));
+        
+        const ring = document.getElementById(kat.ring);
+        if (ring) {
+            ring.style.setProperty('--pct', pct);
+            document.getElementById(`txt${kat.ring.substring(4)}`).innerText = `${completed}/${maxTasks}`;
+        }
+    });
 }
 
-// --- 3. PENGURUSAN DATA (LOCALSTORAGE) ---
-function loadChecklistState() {
-    const savedData = JSON.parse(localStorage.getItem('amalanStateNew'));
-    if (savedData) {
-        amalanData.forEach(kat => {
-            const savedKat = savedData.find(s => s.id === kat.id);
-            if (savedKat) {
-                kat.tasks.forEach(task => {
-                    const savedTask = savedKat.tasks.find(st => st.id === task.id);
-                    if (savedTask) task.completed = savedTask.completed;
-                });
-            }
+window.toggleTask = function(katId, taskId) {
+    const task = appData.find(k => k.id === katId).tasks.find(t => t.id === taskId);
+    task.completed = !task.completed;
+    saveData(); renderAmalan();
+}
+
+function renderAmalan() {
+    const list = document.getElementById('amalanList'); list.innerHTML = '';
+    
+    appData.forEach(kat => {
+        let html = '';
+        kat.tasks.forEach(t => {
+            const compClass = t.completed ? 'completed' : '';
+            html += `
+                <div class="list-card ${compClass}" onclick="toggleTask('${kat.id}', '${t.id}')">
+                    <div class="list-checkbox"></div>
+                    <div class="list-content">
+                        <div class="list-title">${t.name}</div>
+                        <div class="list-desc">${t.desc}</div>
+                    </div>
+                </div>
+            `;
         });
+        
+        list.innerHTML += `
+            <div class="category-title">
+                <span>${kat.title}</span>
+            </div>
+            ${html}
+        `;
+    });
+    updateRings();
+}
+
+window.addBonus = function() {
+    const input = document.getElementById('newBonusInput');
+    const val = input.value.trim();
+    if(val) {
+        const bonusCat = appData.find(k => k.id === 'bonus');
+        bonusCat.tasks.push({ id: 'b' + Date.now(), name: val, desc: 'Amalan Tambahan', completed: false });
+        input.value = '';
+        saveData(); renderAmalan();
     }
 }
-loadChecklistState();
 
-function saveChecklistState() {
-    const state = amalanData.map(k => ({ id: k.id, tasks: k.tasks.map(t => ({ id: t.id, completed: t.completed })) }));
-    localStorage.setItem('amalanStateNew', JSON.stringify(state));
-    updateProgress();
-}
-
-window.resetChecklist = function() {
-    if(confirm("Pasti mahu reset senarai amalan hari ini?")) {
-        amalanData.forEach(k => k.tasks.forEach(t => t.completed = false));
-        saveChecklistState(); renderAmalan(); switchTab('amalan');
-    }
-}
-
-window.saveSettings = function() {
-    userSettings = { city: document.getElementById('cityInput').value.trim() || 'Bangi', offQiyam: parseInt(document.getElementById('offQiyam').value) || 60, offDhuha: parseInt(document.getElementById('offDhuha').value) || 30, offTidur: parseInt(document.getElementById('offTidur').value) || 120 };
-    localStorage.setItem('appSettings', JSON.stringify(userSettings));
-    alert("Tetapan disimpan!"); fetchWaktuSolat();
-}
-
-// --- 4. FUNGSI MASA & API ALADHAN ---
-function formatAMPM(time24) {
-    let [h, m] = time24.split(':'); h = parseInt(h);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    return `${h % 12 || 12}:${m} ${ampm}`;
-}
-
-function adjustTime(time24, minutesOffset) {
-    let [h, m] = time24.split(':'); let d = new Date(); d.setHours(h, m, 0); d.setMinutes(d.getMinutes() + minutesOffset);
-    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-
+// ==========================================
+// API ALADHAN (SOLAT & KIBLAT)
+// ==========================================
 async function fetchWaktuSolat() {
     try {
         const url = `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(userSettings.city)}&country=Malaysia&method=11`;
@@ -78,184 +179,125 @@ async function fetchWaktuSolat() {
         const d = result.data;
         const hijri = d.date.hijri;
         
-        // Kemas kini data kalendar global untuk penapisan Amal Soleh
-        globalHijriMonth = parseInt(hijri.month.number);
-        globalHijriDay = parseInt(hijri.day);
-
-        // Header Tab Amalan
+        // Header
         const daysMy = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
-        document.getElementById('hariIniTeks').innerText = daysMy[globalDayOfWeek];
-        document.getElementById('tarikhTeks').innerText = `${hijri.day} ${hijri.month.en} ${hijri.year} • ${d.date.readable}`;
+        document.getElementById('hariIniTeks').innerText = daysMy[new Date().getDay()];
+        document.getElementById('tarikhTeks').innerText = `${hijri.day} ${hijri.month.en} ${hijri.year}H | ${d.date.readable}`;
 
-        renderMingguanCalendar();
-        renderAmalan(); 
-        
-        // Tab Waktu Solat & Kalendar
-        renderWaktuSolatTab(d.timings, d);
-        document.getElementById('hijriDateDisplay').innerText = `${hijri.day} ${hijri.month.en} ${hijri.year}H`;
-        document.getElementById('masihiDateDisplay').innerText = `${d.date.readable} | ${userSettings.city}`;
-        
-        let eventsHtml = `<li class="event-item"><span class="event-name">Ayyamul Bidh</span><span class="event-date">13, 14, 15 ${hijri.month.en}</span></li>`;
-        if (globalHijriMonth === 1) eventsHtml += `<li class="event-item"><span class="event-name">Hari Asyura</span><span class="event-date">10 Muharram</span></li>`;
-        if (globalHijriMonth === 9) eventsHtml += `<li class="event-item"><span class="event-name">Bulan Ramadan</span><span class="event-date">Sepanjang Bulan</span></li>`;
-        if (globalHijriMonth === 10) eventsHtml += `<li class="event-item"><span class="event-name">Hari Raya Aidilfitri</span><span class="event-date">1 Syawal</span></li>`;
-        if (globalHijriMonth === 12) {
-            eventsHtml += `<li class="event-item"><span class="event-name">Hari Arafah</span><span class="event-date">9 Zulhijjah</span></li>`;
-            eventsHtml += `<li class="event-item"><span class="event-name">Hari Raya Aidiladha</span><span class="event-date">10 Zulhijjah</span></li>`;
-        }
-        document.getElementById('islamicEvents').innerHTML = eventsHtml;
-        fetchQibla(d.meta.latitude, d.meta.longitude);
+        // Senarai Solat (Fardu Sahaja)
+        const solatArr = [
+            { l: 'Subuh', k: 'Fajr' }, { l: 'Zohor', k: 'Dhuhr' },
+            { l: 'Asar', k: 'Asr' }, { l: 'Maghrib', k: 'Maghrib' }, { l: 'Isyak', k: 'Isha' }
+        ];
+
+        let html = '';
+        solatArr.forEach(s => {
+            // Apply adjustment
+            let [h, m] = d.timings[s.k].split(':');
+            let dateObj = new Date(); dateObj.setHours(parseInt(h), parseInt(m), 0);
+            dateObj.setMinutes(dateObj.getMinutes() + parseInt(userSettings.offSolat));
+            
+            let adjH = String(dateObj.getHours()).padStart(2,'0');
+            let adjM = String(dateObj.getMinutes()).padStart(2,'0');
+            
+            // Convert to 12h AM/PM
+            let finalH = parseInt(adjH);
+            let ampm = finalH >= 12 ? 'PM' : 'AM';
+            finalH = finalH % 12 || 12;
+            
+            html += `<div class="iman-time-row"><span>${s.l}</span><span style="font-weight:bold; color:var(--primary);">${finalH}:${adjM} ${ampm}</span></div>`;
+        });
+        document.getElementById('solatList2').innerHTML = html;
+
+        // Kiblat
+        const qiblaRes = await fetch(`https://api.aladhan.com/v1/qibla/${d.meta.latitude}/${d.meta.longitude}`);
+        const qiblaData = await qiblaRes.json();
+        const degree = Math.round(qiblaData.data.direction);
+        document.getElementById('qiblaDegreeText').innerText = `${degree}°`;
+        document.getElementById('compassIcon').style.transform = `rotate(${degree - 90}deg)`;
 
     } catch (err) { console.error(err); }
 }
 
-async function fetchQibla(lat, lng) {
-    try {
-        const qiblaRes = await fetch(`https://api.aladhan.com/v1/qibla/${lat}/${lng}`);
-        const qiblaData = await qiblaRes.json();
-        const degree = Math.round(qiblaData.data.direction);
-        document.getElementById('qiblaDegreeText').innerText = `${degree}°`;
-        document.getElementById('qiblaLocationTxt').innerText = `Lokasi: ${userSettings.city}, Malaysia`;
-        document.getElementById('compassIcon').style.transform = `rotate(${degree - 90}deg)`;
-    } catch(e) { console.error(e); }
+window.saveSettings = function() {
+    userSettings.city = document.getElementById('cityInput').value || 'Bangi';
+    userSettings.offSolat = parseInt(document.getElementById('offSolat').value) || 0;
+    localStorage.setItem('mizanSettings', JSON.stringify(userSettings));
+    alert("Tetapan Disimpan!"); fetchWaktuSolat();
 }
 
-// --- 5. RENDER ANTARAMUKA TAB AMALAN ---
-function renderMingguanCalendar() {
-    const strip = document.getElementById('calendarStrip');
-    strip.innerHTML = '';
-    const today = new Date();
-    const daysMy = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+// ==========================================
+// KALENDAR PUASA
+// ==========================================
+function renderCalendar(month, year) {
+    const daysContainer = document.getElementById('calendarDays');
+    const monthYearText = document.getElementById('calMonthYear');
+    daysContainer.innerHTML = '';
     
-    // Jana 7 hari (3 hari lepas, hari ini, 3 hari depan)
-    for(let i = -3; i <= 3; i++) {
-        let d = new Date(today);
-        d.setDate(today.getDate() + i);
-        let isActive = i === 0 ? 'active' : '';
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const monthNames = ["Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
+    monthYearText.innerText = `${monthNames[month]} ${year}`;
+
+    // Blank cells
+    for(let i = 0; i < firstDay; i++) {
+        daysContainer.innerHTML += `<div class="cal-cell" style="background:transparent;"></div>`;
+    }
+
+    // Days
+    const today = new Date();
+    for(let i = 1; i <= daysInMonth; i++) {
+        const currentDate = new Date(year, month, i);
+        const dayOfWeek = currentDate.getDay(); // 1=Isnin, 4=Khamis
         
-        strip.innerHTML += `
-            <div class="cal-day ${isActive}">
-                <span class="cal-day-name">${daysMy[d.getDay()].substring(0,3)}</span>
-                <span class="cal-day-num">${d.getDate()}</span>
-            </div>
-        `;
+        let classes = 'cal-cell';
+        if (currentDate.getDate() === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+            classes += ' today';
+        } else if (dayOfWeek === 1 || dayOfWeek === 4) {
+            // Highlight Puasa Isnin/Khamis (Secara kasarnya Ayyamul Bidh juga dimasukkan jika API dipanggil)
+            classes += ' sunnah';
+        }
+
+        daysContainer.innerHTML += `<div class="${classes}">${i}</div>`;
     }
 }
 
-function updateProgress() {
-    let total = 0, comp = 0;
-    amalanData.forEach(k => {
-        let validTasks = k.tasks;
-        if(k.type === 'list_dynamic') {
-            validTasks = k.tasks.filter(t => isTaskValidToday(t.condition));
-        }
-        validTasks.forEach(t => { total++; if(t.completed) comp++; });
-    });
-    const pct = total === 0 ? 0 : Math.round((comp/total)*100);
-    document.getElementById('progressRing').style.setProperty('--pct', pct);
-    document.getElementById('progressText').innerText = pct + '%';
+window.changeMonth = function(dir) {
+    currentMonth += dir;
+    if(currentMonth > 11) { currentMonth = 0; currentYear++; }
+    else if(currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar(currentMonth, currentYear);
 }
 
-window.toggleTask = function(katId, taskId) {
-    const task = amalanData.find(k => k.id === katId).tasks.find(t => t.id === taskId);
-    task.completed = !task.completed; saveChecklistState(); renderAmalan();
-}
-
-function isTaskValidToday(condition) {
-    if (condition === 'monday') return globalDayOfWeek === 1;
-    if (condition === 'thursday') return globalDayOfWeek === 4;
-    if (condition === 'asyura') return globalHijriMonth === 1 && globalHijriDay === 10;
-    if (condition === 'korban') return globalHijriMonth === 12 && globalHijriDay === 10;
-    return true; // Jika tiada condition
-}
-
-function renderAmalan() {
-    const list = document.getElementById('amalanList'); list.innerHTML = '';
-    
-    amalanData.forEach(kategori => {
-        
-        // Tapis task untuk kategori dinamik
-        let tasksToRender = kategori.tasks;
-        if(kategori.type === 'list_dynamic') {
-            tasksToRender = kategori.tasks.filter(t => isTaskValidToday(t.condition));
-            // Sembunyikan kategori jika tiada amalan kalendar hari ini
-            if(tasksToRender.length === 0) return; 
-        }
-
-        let html = '';
-        let completedCount = tasksToRender.filter(t => t.completed).length;
-
-        // --- RENDER GRID (Solat Fardu) ---
-        if (kategori.type === 'grid') {
-            let gridItems = '';
-            tasksToRender.forEach(t => {
-                const compClass = t.completed ? 'completed' : '';
-                gridItems += `
-                    <div class="fardu-item ${compClass}" onclick="toggleTask('${kategori.id}', '${t.id}')">
-                        <div class="fardu-icon">${t.icon}</div>
-                        <div class="fardu-name">${t.name}</div>
-                        <div class="fardu-check">✔</div>
-                    </div>
-                `;
-            });
-            html = `<div class="fardu-grid">${gridItems}</div>`;
-        } 
-        
-        // --- RENDER LIST (Kategori Lain) ---
-        else {
-            tasksToRender.forEach(t => {
-                const compClass = t.completed ? 'completed' : '';
-                html += `
-                    <div class="list-card ${compClass}" onclick="toggleTask('${kategori.id}', '${t.id}')">
-                        <div class="list-checkbox"></div>
-                        <div class="list-content">
-                            <div class="list-title">${t.name}</div>
-                            ${t.desc ? `<div class="list-desc">${t.desc}</div>` : ''}
-                        </div>
-                        <div class="list-icon">${t.icon}</div>
-                    </div>
-                `;
-            });
-        }
-
-        // Cantum Tajuk dan Kandungan
+// ==========================================
+// ZIKIR & MODAL
+// ==========================================
+function renderZikirList() {
+    const list = document.getElementById('zikirList');
+    zikirData.forEach((z, index) => {
         list.innerHTML += `
-            <div class="category-title">
-                <span>${kategori.title}</span>
-                <span class="category-count">${completedCount}/${tasksToRender.length}</span>
+            <div class="zikir-cat-btn" onclick="openZikirModal(${index})">
+                <span>${z.title}</span> <span style="color:var(--primary);">❯</span>
             </div>
-            ${html}
         `;
     });
-    updateProgress();
 }
 
-// --- 6. RENDER WAKTU SOLAT TAB ---
-function renderWaktuSolatTab(t, dataAPI) {
-    const listDiv = document.getElementById('solatList2');
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    document.getElementById('solatTodayStr').innerText = `Today, ${days[new Date().getDay()]}`;
-    document.getElementById('solatHijriStr').innerText = `${dataAPI.date.hijri.day} ${dataAPI.date.hijri.month.en} ${dataAPI.date.hijri.year}`;
-    document.getElementById('solatLocationFooter').innerHTML = `📍 ${userSettings.city}, Malaysia`;
-
-    const solatArr = [
-        { l: 'Subuh', k: 'Fajr', icon: '🌤️' }, { l: 'Syuruk', k: 'Sunrise', icon: '🌅' },
-        { l: 'Ishraq', k: 'Sunrise', icon: '🔆', offset: 15 }, { l: 'Duha', k: 'Sunrise', icon: '☀️', offset: 30 }, 
-        { l: 'Zuhur', k: 'Dhuhr', icon: '☀️' }, { l: 'Asar', k: 'Asr', icon: '⛅' },
-        { l: 'Maghrib', k: 'Maghrib', icon: '🌇' }, { l: 'Isyak', k: 'Isha', icon: '🌙' },
-        { l: 'Qiam', k: 'Fajr', icon: '✨', offset: -userSettings.offQiyam, nextDay: true },
-        { l: 'Subuh', k: 'Fajr', icon: '🌤️', nextDay: true }
-    ];
-
-    let html = '';
-    solatArr.forEach(s => {
-        let time24 = t[s.k];
-        if (s.offset) time24 = adjustTime(time24, s.offset);
-        let nextDayLabel = s.nextDay ? '<span style="font-size:0.7em; color:#8e8e93; margin-right:5px;">+1d</span>' : '';
-        let bellIcon = s.nextDay || s.l === 'Ishraq' || s.l === 'Duha' || s.l === 'Syuruk' ? '🔕' : '🔔';
-        html += `<div class="iman-time-row"><div class="iman-time-name"><span style="width:25px; text-align:center;">${s.icon}</span> ${s.l}</div><div class="iman-time-val">${nextDayLabel}${time24} <span style="font-size:0.8em; opacity:0.8;">${bellIcon}</span></div></div>`;
-    });
-    listDiv.innerHTML = html;
+window.openZikirModal = function(index) {
+    document.getElementById('modalTitle').innerText = zikirData[index].title;
+    document.getElementById('modalBody').innerText = zikirData[index].content;
+    document.getElementById('zikirModal').style.display = 'block';
 }
 
+window.closeZikirModal = function() {
+    document.getElementById('zikirModal').style.display = 'none';
+}
+
+// Mulakan Aplikasi
+loadData();
 fetchWaktuSolat();
+renderCalendar(currentMonth, currentYear);
+renderZikirList();
+
+</script>
